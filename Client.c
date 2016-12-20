@@ -29,17 +29,17 @@
         map[8] = '\0';
         map[9] = '\0';
 
-
+        printf("TIC TAC TOE Client_Cosimo Sguanci\n\n");
 
         //La chiamata gethostbyname è superflua dal momento che chiediamo l'IP del server all'utente.
 
-        /*printf("Inserisci le informazioni relative al Server\n");
+        printf("Inserisci le informazioni relative al Server\n");
         printf("Indirizzo IP: ");
         scanf("%s",addr);
         printf("Porta: ");
-        scanf("%d",&port);*/
-        strcpy(addr,"127.0.0.1");
-        port = 8888;
+        scanf("%d",&port);
+        /*strcpy(addr,"127.0.0.1");
+        port = 8888;*/
 
         if((sd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) < 0){
             puts("Errore nella creazione del socket.");
@@ -55,21 +55,22 @@
             return 1;
         }
 
-        //printf("Connesso al server %s sulla porta %d\n",addr,port);
+        printf("\nConnesso al server %s sulla porta %d\n",addr,port);
         printf("\nInserisci il tuo username: ");
-        scanf("%s", buf);
-        write(sd, buf, 1024);
+        scanf("%s",buf);
+        write(sd,buf,1024);
+
         for(;;){
 
             if(shouldExit)
                 break;
-            scanf("%s", buf);
+            scanf("%s",buf);
 
 
-            if(strcmp(buf, "!quit") == 0)
+            if(strcmp(buf,"!quit") == 0)
                 break;
 
-            if(strcmp(buf, "!help") == 0){
+            if(strcmp(buf,"!help") == 0){
                 printf("Sono disponibili i seguenti comandi:\n");
                 printf("* !help --> mostra l'elenco dei comandi disponibili\n");
                 printf("* !who --> mostra l'elenco dei client connessi al server\n");
@@ -82,30 +83,29 @@
                 continue;
             }
 
-            if(strcmp(buf, "!who") == 0){
-                write(sd, buf,10);
-                read(sd, &c, sizeof(c));
+            if(strcmp(buf,"!who") == 0){
+                write(sd,buf,10);
+                read(sd,&c,sizeof(c));
                 i = 0;
                 x = 0;
 
-                while(x < c && read(sd, len[x], sizeof(int)) > 0)
-                    x++; //Leggo la lunghezza di ogni nome
+                while(x < c && read(sd,len[x],sizeof(int)) > 0) // &len?
+                    x++;
 
-                while(i < c && (read(sd, name, len[i])) > 0)
+                while(i < c && (read(sd,name,len[i])) > 0)
                 {
-                         printf("%s\n", name); //Li scrive senza andare a capo
+                         printf("%s\n",name);
                          i++;
-
 
                 }
                 continue;
             }
 
-            if(strcmp(buf, "!create") == 0){
-                    write(sd, buf, 10);
+            if(strcmp(buf,"!create") == 0){
+                    write(sd,buf,10);
                     puts("In attesa di uno sfidante...");
-                    read(sd, buf, 1024); // Aspetto di essere risvegliato
-                    printf("\n%s si e' unito alla partita.", buf);
+                    read(sd,buf,1024); // Aspetto di essere risvegliato
+                    printf("\n%s si e' unito alla partita.",buf);
                     printf("\nIl tuo simbolo e' X. Sta a te.\n");
                     simbolo = 'X';
                     simbolo_vs = 'O';
@@ -113,23 +113,23 @@
                     for(;;){
                         if(shouldExit)
                             break;
-                        result = checkResult(map, simbolo, simbolo_vs);
+                        result = checkResult(map,simbolo,simbolo_vs);
                         switch(result){
 
                                 case 0: //La partita non è finita
-                                    scanf("%s", buf);
+                                    scanf("%s",buf);
                                     if(strcmp(buf, "!hit") == 0){
                                         for(;;){
                                         printf("Cella: ");
-                                        scanf("%d", &cellNum);
+                                        scanf("%d",&cellNum);
                                         if(cellNum > 0 && cellNum <= 9){
                                             if(map[cellNum] == '\0'){
                                                 map[cellNum] = simbolo;
-                                                write(sd, &cellNum, sizeof(int));
+                                                write(sd,&cellNum,sizeof(int));
                                                 if((result = checkResult(map,simbolo,simbolo_vs))!=0)
                                                 {
                                                     shouldExit = 1;
-                                                    write(sd, &shouldExit, sizeof(int));
+                                                    write(sd,&shouldExit,sizeof(int));
                                                     switch(result){
                                                         case 1:
                                                             printf("\nVittoria\n");
@@ -146,9 +146,14 @@
                                                 }
                                                 else
                                                 {
-                                                    write(sd, &shouldExit, sizeof(int));
+                                                    write(sd,&shouldExit,sizeof(int));
                                                 	printf("\nSta al tuo avversario.\n");
-                                                	read(sd, &cellNum, sizeof(int)); //se la partita è finita mando -1?
+                                                	read(sd,&cellNum,sizeof(int));
+                                                	if(cellNum == -1)
+                                                    {
+                                                        printf("\nAvversario disconnesso\n");
+                                                        goto END;
+                                                    }
                                                     map[cellNum] = simbolo_vs;
                                                     printf("\nIl tuo avversario ha colpito la casella numero %d\n", cellNum);
                                                 	break;
@@ -165,15 +170,15 @@
                                         }
                                     }
 
-                                    if(strcmp(buf, "!disconnect") == 0){ //Non funziona
+                                    if(strcmp(buf,"!disconnect") == 0){ //Non funziona
                                         printf("\nDisconnessione avvenuta con successo, ti sei arreso.\n");
                                         shouldExit = 1;
-                                        //write(sd,&move,sizeof(int));
-                                        write(sd, &shouldExit, sizeof(int));
+                                        int ex = -1;
+                                        write(sd,&ex,sizeof(int));
                                         break;
                                     }
 
-                                    if(strcmp(buf, "!show_map") == 0){
+                                    if(strcmp(buf,"!show_map") == 0){
                                         printf("\n\n");
                                         printf(" %c | %c | %c\n",   map[7], map[8], map[9]);
                                         printf("----------\n");
@@ -189,17 +194,17 @@
                                  case 1:
                                     printf("\nHai vinto\n");
                                     shouldExit = 1;
-                                    write(sd, &shouldExit, sizeof(int));
+                                    write(sd,&shouldExit,sizeof(int));
                                     break;
                                  case 2:
                                     printf("\nHai perso\n");
                                     shouldExit = 1;
-                                    write(sd, &shouldExit, sizeof(int));
+                                    write(sd,&shouldExit,sizeof(int));
                                     break;
                                 case 3:
                                     printf("\nPareggio\n");
                                     shouldExit = 1;
-                                    write(sd, &shouldExit, sizeof(int));
+                                    write(sd,&shouldExit,sizeof(int));
                                     break;
                         }
 
@@ -207,16 +212,18 @@
 
                     }
 
+
+
             }
 
-            if(strcmp(buf, "!join") == 0){
-                    write(sd, buf, 10);
+            if(strcmp(buf,"!join") == 0){
+                    write(sd,buf,10);
                     printf("Avversario: ");
-                    scanf("%s", name);
-                    write(sd, name, strlen(name));
-                    read(sd, msg, 1024); // Leggo dal server se il giocatore cercato è stato trovato
-                    if(strcmp(msg, "Giocatore non presente o occupato") == 0){
-                        printf("%s\n", msg);
+                    scanf("%s",name);
+                    write(sd,name,strlen(name));
+                    read(sd,msg,1024); // Leggo dal server se il giocatore cercato è stato trovato
+                    if(strcmp(msg,"Giocatore non presente o occupato") == 0){
+                        printf("%s\n",msg);
                         continue;
                     }
                     else{
@@ -230,14 +237,19 @@
                             if(shouldExit)
                                 break;
                                 if(shouldRead){
-                                    read(sd, &move, sizeof(int));
+                                    read(sd,&move,sizeof(int));
+                                    if(move == -1)
+                                    {
+                                        printf("\nAvversario disconnesso\n");
+                                        goto END;
+                                    }
                                     map[move] = simbolo_vs;
                                     printf("Il tuo avversario ha colpito la casella %d", move);}
-                                    result = checkResult(map, simbolo, simbolo_vs);
+                                    result = checkResult(map,simbolo,simbolo_vs);
                                     switch(result){
                                         case 0:
-                                            LOOP: printf("\nSta a te\n"); //GOTO label
-                                            scanf("%s", buf);
+                                            LOOP : printf("\nSta a te\n"); //GOTO label
+                                            scanf("%s",buf);
 
                                             if(strcmp(buf, "!show_map") == 0){
                                             printf("\n\n");
@@ -250,12 +262,20 @@
                                             break;
                                             }
 
-                                            if(strcmp(buf, "!hit") == 0){
+                                            if(strcmp(buf, "!disconnect") == 0){
+                                                printf("\nDisconnessione avvenuta con successo, ti sei arreso.\n");
+                                                shouldExit = 1;
+                                                int ex = -1;
+                                                write(sd,&ex,sizeof(int));
+                                                break;
+                                            }
+
+                                            if(strcmp(buf,"!hit") == 0){
 
                                                 for(;;){
                                                     shouldRead = 1;
                                                     printf("Cella: ");
-                                                    scanf("%d", &cellNum);
+                                                    scanf("%d",&cellNum);
                                                     if(cellNum > 0 && cellNum <= 9){
                                                         if(map[cellNum] == '\0'){
                                                             map[cellNum] = simbolo;
@@ -263,7 +283,7 @@
                                                             if((result = checkResult(map,simbolo,simbolo_vs)) != 0)
                                                             {
                                                                 shouldExit = 1;
-                                                                write(sd, &shouldExit, sizeof(int));
+                                                                write(sd,&shouldExit,sizeof(int));
                                                                 switch(result){
                                                                     case 1:
                                                                         printf("\nVittoria\n");
@@ -278,7 +298,7 @@
                                                                 break;
                                                             }
                                                             else {
-                                                                write(sd, &shouldExit, sizeof(int));
+                                                                write(sd,&shouldExit,sizeof(int));
                                                                 printf("\nSta al tuo avversario.\n");
                                                                 break;
                                                             }
@@ -292,7 +312,7 @@
                                                 }
                                                 else {
                                                     printf("\nInserisci un numero di cella valido (da 0 a 9)\n");
-                                                    goto LOOP; // Senza usare il goto quando si inserisce una cella sbagliata non la fa reinserire
+                                                    goto LOOP;
 
                                                 }
 
@@ -302,12 +322,7 @@
                                      }
                                      break;
 
-                                    if(strcmp(buf, "!disconnect") == 0){
-                                        printf("\nDisconnessione avvenuta con successo, ti sei arreso.\n");
-                                        shouldExit = 1;
-                                        write(sd, &shouldExit, sizeof(int));
-                                        break;
-                                    }
+
 
 
 
@@ -318,17 +333,17 @@
                                 case 1:
                                     printf("\n\nHai vinto\n");
                                     shouldExit = 1;
-                                    write(sd, &shouldExit, sizeof(int));
+                                    write(sd,&shouldExit,sizeof(int));
                                     break;
                                 case 2:
                                     printf("\n\nHai perso\n");
                                     shouldExit = 1;
-                                    write(sd, &shouldExit, sizeof(int));
+                                    write(sd,&shouldExit,sizeof(int));
                                     break;
                                 case 3:
                                     printf("\n\nPareggio\n");
                                     shouldExit = 1;
-                                    write(sd, &shouldExit, sizeof(int));
+                                    write(sd,&shouldExit,sizeof(int));
                                     break;
 
                             }
@@ -338,10 +353,11 @@
 
                 }
 
-        //Inserito comando errato
+        if(!shouldExit)
+                    printf("\nInserito comando errato. Digita !help per la lista dei comandi.\n");
 
     }
-        close(sd);
+        END : close(sd);
         return 0;
     }
 
